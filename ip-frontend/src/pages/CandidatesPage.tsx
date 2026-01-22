@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
-import { useAuth } from "../hooks/useAuth";
 import {
   createCandidate,
   deleteCandidate,
@@ -15,7 +14,6 @@ import { Label } from "../components/ui/label";
 import { Trash2, Plus } from "lucide-react";
 
 export const CandidatesPage = () => {
-  const { user } = useAuth();
   const dispatch = useDispatch();
   const candidates = useSelector((state: RootState) => state.candidates.candidates);
   const [showForm, setShowForm] = useState(false);
@@ -23,22 +21,20 @@ export const CandidatesPage = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) return;
-
-    const unsubscribe = subscribeToCandidates(user.id, (updatedCandidates) => {
+    const unsubscribe = subscribeToCandidates((updatedCandidates) => {
       dispatch(setCandidates(updatedCandidates));
     });
 
     return unsubscribe;
-  }, [user?.id, dispatch]);
+  }, [dispatch]);
 
   const handleAddCandidate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !formData.email || !formData.name) return;
+    if (!formData.email || !formData.name) return;
 
     setLoading(true);
     try {
-      const newCandidate = await createCandidate(user.id, formData.email, formData.name);
+      const newCandidate = await createCandidate(formData.email, formData.name);
       dispatch(addCandidate(newCandidate));
       setFormData({ email: "", name: "" });
       setShowForm(false);

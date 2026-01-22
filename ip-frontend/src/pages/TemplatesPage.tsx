@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
-import { useAuth } from "../hooks/useAuth";
 import {
   createTemplate,
   updateTemplate as updateTemplateService,
@@ -22,7 +21,6 @@ import { Label } from "../components/ui/label";
 import { Trash2, Plus, Edit2 } from "lucide-react";
 
 export const TemplatesPage = () => {
-  const { user } = useAuth();
   const dispatch = useDispatch();
   const templates = useSelector((state: RootState) => state.templates.templates);
   const questions = useSelector((state: RootState) => state.questions.questions);
@@ -37,18 +35,16 @@ export const TemplatesPage = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) return;
-
-    const unsubscribe = subscribeToTemplates(user.id, (updatedTemplates) => {
+    const unsubscribe = subscribeToTemplates((updatedTemplates) => {
       dispatch(setTemplates(updatedTemplates));
     });
 
     return unsubscribe;
-  }, [user?.id, dispatch]);
+  }, [dispatch]);
 
   const handleAddTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !formData.name || formData.selectedQuestionIds.length === 0) return;
+    if (!formData.name || formData.selectedQuestionIds.length === 0) return;
 
     setLoading(true);
     try {
@@ -69,7 +65,6 @@ export const TemplatesPage = () => {
         setIsEditing(false);
       } else {
         const newTemplate = await createTemplate(
-          user.id,
           formData.name,
           formData.description,
           formData.selectedQuestionIds

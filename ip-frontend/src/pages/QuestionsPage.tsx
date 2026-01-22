@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
-import { useAuth } from "../hooks/useAuth";
 import {
   createQuestion,
   updateQuestion as updateQuestionService,
@@ -23,7 +22,6 @@ import { Label } from "../components/ui/label";
 import { Trash2, Plus, Edit2 } from "lucide-react";
 
 export const QuestionsPage = () => {
-  const { user } = useAuth();
   const dispatch = useDispatch();
   const questions = useSelector((state: RootState) => state.questions.questions);
   const selectedQuestion = useSelector((state: RootState) => state.questions.selectedQuestion);
@@ -33,18 +31,16 @@ export const QuestionsPage = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) return;
-
-    const unsubscribe = subscribeToQuestions(user.id, (updatedQuestions) => {
+    const unsubscribe = subscribeToQuestions((updatedQuestions) => {
       dispatch(setQuestions(updatedQuestions));
     });
 
     return unsubscribe;
-  }, [user?.id, dispatch]);
+  }, [dispatch]);
 
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !formData.title || !formData.content) return;
+    if (!formData.title || !formData.content) return;
 
     setLoading(true);
     try {
@@ -62,7 +58,7 @@ export const QuestionsPage = () => {
         );
         setIsEditing(false);
       } else {
-        const newQuestion = await createQuestion(user.id, formData.title, formData.content);
+        const newQuestion = await createQuestion(formData.title, formData.content);
         dispatch(addQuestion(newQuestion));
       }
       setFormData({ title: "", content: "" });

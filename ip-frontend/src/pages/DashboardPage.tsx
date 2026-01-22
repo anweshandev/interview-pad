@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Users, BookOpen, FileText, Clock } from "lucide-react";
-import { subscribeToCandidates, subscribeToQuestions, subscribeToTemplates, getSessionsByAdminId } from "../services/firestore";
+import { subscribeToCandidates, subscribeToQuestions, subscribeToTemplates, getAllSessions } from "../services/firestore";
 
 export const DashboardPage = () => {
   const { user } = useAuth();
@@ -12,26 +12,24 @@ export const DashboardPage = () => {
   const [sessionCount, setSessionCount] = useState(0);
 
   useEffect(() => {
-    if (!user?.id) return;
-
     // Subscribe to candidates
-    const unsubCandidates = subscribeToCandidates(user.id, (candidates) => {
+    const unsubCandidates = subscribeToCandidates((candidates) => {
       setCandidateCount(candidates.length);
     });
 
     // Subscribe to questions
-    const unsubQuestions = subscribeToQuestions(user.id, (questions) => {
+    const unsubQuestions = subscribeToQuestions((questions) => {
       setQuestionCount(questions.length);
     });
 
     // Subscribe to templates
-    const unsubTemplates = subscribeToTemplates(user.id, (templates) => {
+    const unsubTemplates = subscribeToTemplates((templates) => {
       setTemplateCount(templates.length);
     });
 
     // Load sessions
     (async () => {
-      const sessions = await getSessionsByAdminId(user.id);
+      const sessions = await getAllSessions();
       setSessionCount(sessions.filter(s => s.status === "active").length);
     })();
 
@@ -40,7 +38,7 @@ export const DashboardPage = () => {
       unsubQuestions();
       unsubTemplates();
     };
-  }, [user?.id]);
+  }, []);
 
   const stats = [
     {
@@ -73,7 +71,7 @@ export const DashboardPage = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">Welcome back, {user?.displayName}</p>
+        <p className="text-muted-foreground mt-2">Welcome back, {user?.displayName || user?.email}</p>
       </div>
 
       {/* Stats Grid */}

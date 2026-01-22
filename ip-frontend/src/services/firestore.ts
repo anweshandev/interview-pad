@@ -6,69 +6,24 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
-  query,
-  where,
   onSnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "../util/firebase";
-import type { AdminUser } from "../types";
 import { FIRESTORE_PATHS } from "../types";
 import type { Candidate, Question, EvaluationTemplate, EvaluationSession } from "../types";
-
-// ============= AUTH SERVICES =============
-
-export const createAdminUser = async (email: string, displayName: string): Promise<AdminUser> => {
-  const userId = email.replace(/[^a-zA-Z0-9]/g, "_");
-  const adminUser: AdminUser = {
-    id: userId,
-    email,
-    displayName,
-    role: "admin",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  await setDoc(doc(db, FIRESTORE_PATHS.ADMINS, userId), {
-    ...adminUser,
-    createdAt: adminUser.createdAt.toISOString(),
-    updatedAt: adminUser.updatedAt.toISOString(),
-  });
-
-  return adminUser;
-};
-
-export const getAdminUserByEmail = async (email: string): Promise<AdminUser | null> => {
-  const q = query(collection(db, FIRESTORE_PATHS.ADMINS), where("email", "==", email));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    return null;
-  }
-
-  const doc = querySnapshot.docs[0];
-  const data = doc.data();
-  return {
-    ...data,
-    id: doc.id,
-    createdAt: new Date(data.createdAt),
-    updatedAt: new Date(data.updatedAt),
-  } as AdminUser;
-};
 
 // ============= CANDIDATE SERVICES =============
 
 export const createCandidate = async (
-  adminId: string,
   email: string,
   name: string
 ): Promise<Candidate> => {
-  const candidateId = `${adminId}_${email.replace(/[^a-zA-Z0-9]/g, "_")}`;
+  const candidateId = email.replace(/[^a-zA-Z0-9]/g, "_");
   const candidate: Candidate = {
     id: candidateId,
     email,
     name,
-    adminId,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -82,9 +37,8 @@ export const createCandidate = async (
   return candidate;
 };
 
-export const getCandidatesByAdminId = async (adminId: string): Promise<Candidate[]> => {
-  const q = query(collection(db, FIRESTORE_PATHS.CANDIDATES), where("adminId", "==", adminId));
-  const querySnapshot = await getDocs(q);
+export const getAllCandidates = async (): Promise<Candidate[]> => {
+  const querySnapshot = await getDocs(collection(db, FIRESTORE_PATHS.CANDIDATES));
 
   return querySnapshot.docs.map((doc) => {
     const data = doc.data();
@@ -106,11 +60,10 @@ export const updateCandidate = async (candidateId: string, updates: Partial<Cand
 
 export const deleteCandidate = async (candidateId: string) => {
   await deleteDoc(doc(db, FIRESTORE_PATHS.CANDIDATES, candidateId));
-};;
+};
 
-export const subscribeToCandidates = (adminId: string, callback: (candidates: Candidate[]) => void): Unsubscribe => {
-  const q = query(collection(db, FIRESTORE_PATHS.CANDIDATES), where("adminId", "==", adminId));
-  return onSnapshot(q, (snapshot) => {
+export const subscribeToCandidates = (callback: (candidates: Candidate[]) => void): Unsubscribe => {
+  return onSnapshot(collection(db, FIRESTORE_PATHS.CANDIDATES), (snapshot) => {
     const candidates = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -127,7 +80,6 @@ export const subscribeToCandidates = (adminId: string, callback: (candidates: Ca
 // ============= QUESTION SERVICES =============
 
 export const createQuestion = async (
-  adminId: string,
   title: string,
   content: string
 ): Promise<Question> => {
@@ -136,7 +88,6 @@ export const createQuestion = async (
     id: questionRef.id,
     title,
     content,
-    adminId,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -150,9 +101,8 @@ export const createQuestion = async (
   return question;
 };
 
-export const getQuestionsByAdminId = async (adminId: string): Promise<Question[]> => {
-  const q = query(collection(db, FIRESTORE_PATHS.QUESTIONS), where("adminId", "==", adminId));
-  const querySnapshot = await getDocs(q);
+export const getAllQuestions = async (): Promise<Question[]> => {
+  const querySnapshot = await getDocs(collection(db, FIRESTORE_PATHS.QUESTIONS));
 
   return querySnapshot.docs.map((doc) => {
     const data = doc.data();
@@ -192,9 +142,8 @@ export const deleteQuestion = async (questionId: string) => {
   await deleteDoc(doc(db, FIRESTORE_PATHS.QUESTIONS, questionId));
 };
 
-export const subscribeToQuestions = (adminId: string, callback: (questions: Question[]) => void): Unsubscribe => {
-  const q = query(collection(db, FIRESTORE_PATHS.QUESTIONS), where("adminId", "==", adminId));
-  return onSnapshot(q, (snapshot) => {
+export const subscribeToQuestions = (callback: (questions: Question[]) => void): Unsubscribe => {
+  return onSnapshot(collection(db, FIRESTORE_PATHS.QUESTIONS), (snapshot) => {
     const questions = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -211,7 +160,6 @@ export const subscribeToQuestions = (adminId: string, callback: (questions: Ques
 // ============= TEMPLATE SERVICES =============
 
 export const createTemplate = async (
-  adminId: string,
   name: string,
   description: string,
   questionIds: string[]
@@ -221,7 +169,6 @@ export const createTemplate = async (
     id: templateRef.id,
     name,
     description,
-    adminId,
     questionIds,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -236,9 +183,8 @@ export const createTemplate = async (
   return template;
 };
 
-export const getTemplatesByAdminId = async (adminId: string): Promise<EvaluationTemplate[]> => {
-  const q = query(collection(db, FIRESTORE_PATHS.TEMPLATES), where("adminId", "==", adminId));
-  const querySnapshot = await getDocs(q);
+export const getAllTemplates = async (): Promise<EvaluationTemplate[]> => {
+  const querySnapshot = await getDocs(collection(db, FIRESTORE_PATHS.TEMPLATES));
 
   return querySnapshot.docs.map((doc) => {
     const data = doc.data();
@@ -278,9 +224,8 @@ export const deleteTemplate = async (templateId: string) => {
   await deleteDoc(doc(db, FIRESTORE_PATHS.TEMPLATES, templateId));
 };
 
-export const subscribeToTemplates = (adminId: string, callback: (templates: EvaluationTemplate[]) => void): Unsubscribe => {
-  const q = query(collection(db, FIRESTORE_PATHS.TEMPLATES), where("adminId", "==", adminId));
-  return onSnapshot(q, (snapshot) => {
+export const subscribeToTemplates = (callback: (templates: EvaluationTemplate[]) => void): Unsubscribe => {
+  return onSnapshot(collection(db, FIRESTORE_PATHS.TEMPLATES), (snapshot) => {
     const templates = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -297,7 +242,6 @@ export const subscribeToTemplates = (adminId: string, callback: (templates: Eval
 // ============= SESSION SERVICES =============
 
 export const createSession = async (
-  adminId: string,
   candidateId: string,
   template: EvaluationTemplate,
   questions: Question[]
@@ -315,7 +259,6 @@ export const createSession = async (
 
   const session: EvaluationSession = {
     id: sessionRef.id,
-    adminId,
     candidateId,
     templateId: template.id,
     questions: sessionQuestions,
@@ -337,9 +280,8 @@ export const createSession = async (
   return session;
 };
 
-export const getSessionsByAdminId = async (adminId: string): Promise<EvaluationSession[]> => {
-  const q = query(collection(db, FIRESTORE_PATHS.SESSIONS), where("adminId", "==", adminId));
-  const querySnapshot = await getDocs(q);
+export const getAllSessions = async (): Promise<EvaluationSession[]> => {
+  const querySnapshot = await getDocs(collection(db, FIRESTORE_PATHS.SESSIONS));
 
   return querySnapshot.docs.map((doc) => {
     const data = doc.data();

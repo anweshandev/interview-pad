@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../util/firebase";
-import { getAdminUserByEmail, createAdminUser } from "../services/firestore";
 import { setUser, setLoading, setError } from "../store/slices/authSlice";
 import { type RootState } from "../store";
+import type { AdminUser } from "../types";
 
 export const useAuth = () => {
   const dispatch = useDispatch();
@@ -16,16 +16,24 @@ export const useAuth = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          // Check if admin user exists in Firestore
-          const adminUser = await getAdminUserByEmail(firebaseUser.email || "");
+          // Get custom claims from token
+          const idTokenResult = await firebaseUser.getIdTokenResult();
+          const role = idTokenResult.claims.role as string | undefined;
 
-          if (adminUser) {
+          // Check if user has admin role
+          if (role === "admin") {
+            const adminUser: AdminUser = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: "admin",
+            };
             dispatch(setUser(adminUser));
           } else {
-            // Create new admin user if not exists
-            const displayName = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Admin";
-            const newAdminUser = await createAdminUser(firebaseUser.email || "", displayName);
-            dispatch(setUser(newAdminUser));
+            // Not an admin, logout
+            await auth.signOut();
+            dispatch(setUser(null));
+            dispatch(setError("Access denied. Admin role required."));
           }
         } else {
           dispatch(setUser(null));
@@ -40,21 +48,14 @@ export const useAuth = () => {
     return unsubscribe;
   }, [dispatch]);
 
-  const loginWithEmail = async (email: string) => {
+  const loginWithEmail = async (_email: string) => {
     dispatch(setLoading(true));
     try {
-      // Sign in anonymously first
-      await signInAnonymously(auth);
-      
-      // Then create/get admin user with email
-      const adminUser = await getAdminUserByEmail(email);
-      if (adminUser) {
-        dispatch(setUser(adminUser));
-      } else {
-        const displayName = email.split("@")[0];
-        const newAdminUser = await createAdminUser(email, displayName);
-        dispatch(setUser(newAdminUser));
-      }
+      // Note: You'll need to set up email link authentication in Firebase
+      // For now, we'll use anonymous signin + custom token approach
+      // This is a placeholder - implement actual email link auth in your Firebase setup
+
+      dispatch(setError("Email login setup required. Contact your Firebase admin."));
     } catch (error) {
       dispatch(setError((error as Error).message));
     } finally {

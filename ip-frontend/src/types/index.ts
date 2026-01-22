@@ -5,19 +5,16 @@
 export type UserRole = "admin" | "candidate";
 
 export interface AdminUser {
-  id: string;
-  email: string;
-  displayName: string;
+  uid: string;
+  email: string | null;
+  displayName: string | null;
   role: "admin";
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Candidate {
   id: string;
   email: string;
   name: string;
-  adminId: string; // Reference to admin who created this candidate
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +23,6 @@ export interface Question {
   id: string;
   title: string;
   content: string; // Markdown content
-  adminId: string; // Reference to admin who created this question
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,7 +31,6 @@ export interface EvaluationTemplate {
   id: string;
   name: string;
   description: string;
-  adminId: string; // Reference to admin who created this template
   questionIds: string[]; // Array of question IDs
   createdAt: Date;
   updatedAt: Date;
@@ -43,7 +38,6 @@ export interface EvaluationTemplate {
 
 export interface EvaluationSession {
   id: string;
-  adminId: string;
   candidateId: string;
   templateId: string; // Reference to original template (for history)
   // Deep copy of questions for immutability
@@ -77,7 +71,6 @@ export interface Answer {
 
 // Firestore Collection Paths
 export const FIRESTORE_PATHS = {
-  ADMINS: "admins",
   CANDIDATES: "candidates",
   QUESTIONS: "questions",
   TEMPLATES: "evaluationTemplates",

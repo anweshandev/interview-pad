@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../store";
 import type { Question } from "../types";
-import { useAuth } from "../hooks/useAuth";
 import {
   createSession,
-  getSessionsByAdminId,
+  getAllSessions,
   updateSession,
   getQuestionById,
 } from "../services/firestore";
@@ -16,7 +15,6 @@ import { Label } from "../components/ui/label";
 import { Copy, StopCircle, Plus } from "lucide-react";
 
 export const SessionsPage = () => {
-  const { user } = useAuth();
   const dispatch = useDispatch();
   const sessions = useSelector((state: RootState) => state.sessions.sessions);
   const candidates = useSelector((state: RootState) => state.candidates.candidates);
@@ -27,17 +25,15 @@ export const SessionsPage = () => {
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.id) return;
-
     (async () => {
-      const sessionList = await getSessionsByAdminId(user.id);
+      const sessionList = await getAllSessions();
       dispatch(setSessions(sessionList));
     })();
-  }, [user?.id, dispatch]);
+  }, [dispatch]);
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.id || !selection.candidate || !selection.template) return;
+    if (!selection.candidate || !selection.template) return;
 
     const selectedTemplate = templates.find((t) => t.id === selection.template);
     if (!selectedTemplate) return;
@@ -52,7 +48,6 @@ export const SessionsPage = () => {
       }
 
       const newSession = await createSession(
-        user.id,
         selection.candidate,
         selectedTemplate,
         questionsData
