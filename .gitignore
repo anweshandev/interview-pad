@@ -1,0 +1,34 @@
+key.json
+
+# Package cache
+node_modules/
+.venv/
+
+# LOGS
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log*
+firebase-debug.*.log*
+
+# cache
+.firebase/
+.next/
+.cache/
+.git/
+
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.md
+!README.md
+!LICENSE.md
